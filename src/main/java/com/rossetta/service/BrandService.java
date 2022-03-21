@@ -26,4 +26,6 @@ public interface BrandService {
     void updateStatus(int id, int status);
 
     PageBean<Brand> selectByPage(int currentPage, int pageSize);
+
+    PageBean<Brand> selectByPageAndCondition(int currentPage, int pageSize, Brand brand);
 }

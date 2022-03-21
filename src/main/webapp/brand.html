@@ -21,18 +21,19 @@
     <el-form :inline="true" :model="brand" class="demo-form-inline">
 
         <el-form-item label="当前状态">
-            <el-select v-model="brand.status" placeholder="当前状态">
+            <el-select v-model="selectBrand.status" placeholder="当前状态">
                 <el-option label="启用" value="1"></el-option>
                 <el-option label="禁用" value="0"></el-option>
+                <el-option label="\" value=""></el-option>
             </el-select>
         </el-form-item>
 
         <el-form-item label="企业名称">
-            <el-input v-model="brand.companyName" placeholder="企业名称"></el-input>
+            <el-input v-model="selectBrand.companyName" placeholder="企业名称"></el-input>
         </el-form-item>
 
         <el-form-item label="品牌名称">
-            <el-input v-model="brand.brandName" placeholder="品牌名称"></el-input>
+            <el-input v-model="selectBrand.brandName" placeholder="品牌名称"></el-input>
         </el-form-item>
 
         <el-form-item>
@@ -43,10 +44,8 @@
     <!--按钮-->
 
     <el-row>
-
         <el-button type="danger" plain @click="deleteByIds">批量删除</el-button>
         <el-button type="primary" plain @click="addDialog">新增</el-button>
-
     </el-row>
 
     <!--添加数据对话框表单-->
@@ -83,9 +82,7 @@
 
 
             <el-form-item>
-                <el-button type="primary" v-if="behavior=='add'" @click="addBrand">提交</el-button>
-                <el-button type="primary" v-else="behavior=='update'"
-                           @click="updateBrand">提交
+                <el-button type="primary" @click="submitBrand">提交</el-button>
                 </el-button>
                 <el-button @click="dialogVisible = false">取消</el-button>
             </el-form-item>
@@ -100,6 +97,7 @@
                 :data="tableData"
                 style="width: 100%"
                 :row-class-name="tableRowClassName"
+                :default-sort="{prop: 'ordered', order: 'ascending'}"
                 @selection-change="handleSelectionChange"
         >
             <el-table-column
@@ -114,18 +112,21 @@
             <el-table-column
                     prop="brandName"
                     label="品牌名称"
+                    sortable
                     align="center"
             >
             </el-table-column>
             <el-table-column
                     prop="companyName"
                     label="企业名称"
+                    sortable
                     align="center"
             >
             </el-table-column>
             <el-table-column
                     prop="ordered"
                     align="center"
+                    sortable
                     label="排序">
             </el-table-column>
             <el-table-column
@@ -172,7 +173,6 @@
 
 </div>
 
-
 <script src="js/vue.js"></script>
 <script src="js/axios-0.18.0.js"></script>
 <script src="element-ui/lib/index.js"></script>
@@ -184,10 +184,39 @@
 
         mounted: function () {
             // 当页面加载完成后，执行的函数--发送异步请求，获取表格数据
-            this.selectByPage();
+            this.selectAll();
         },
 
         methods: {
+
+            // 分页条件查询
+            selectAll() {
+                // _this保存了vue对象，防止作用域失效
+                // var _this = this;
+                // axios({
+                //     method: "post",
+                //     url:
+                //         "http://localhost/brand_case/brand/selectByPageAndCondition?currentPage="+this.currentPage+"&pageSize="+this.pageSize,
+                //     data: this.selectBrand
+                // }).then(function (resp) {
+                //     // 从后端显示每页显示的数据和总共数据条数
+                //     _this.tableData = resp.data.rows;
+                //     _this.totalSize = resp.data.totalSize;
+                // })
+                axios({
+                    method: "post",
+                    url:
+                        "http://localhost/brand_case/brand/selectByPageAndCondition?currentPage=" + this.currentPage + "&pageSize=" + this.pageSize,
+                    data: this.selectBrand
+                }).then(resp => {
+                    // 用resp => {} 不用声明var _this = this 这里的this指代的就是vue对象
+                    // 从后端显示每页显示的数据和总共数据条数
+                    this.tableData = resp.data.rows;
+                    this.totalSize = resp.data.totalSize;
+                })
+            },
+
+
             // 变更状态开关
             changeSwitch(row) {
                 var _this = this;
@@ -200,8 +229,8 @@
                     method: "post",
                     url: "http://localhost/brand_case/brand/updateStatus",
                     data: data
-                }).then(function (resp) {
-                    if (resp.data == "success") {
+                }).then(resp => {
+                    if (resp.data === "success") {
                         _this.$message({
                             message: '状态已变更!',
                             type: 'success'
@@ -210,14 +239,18 @@
                 })
             },
 
-            // 打开新建brand的dialog
-            addDialog() {
+            emptyBrand() {
                 this.brand.id = '';
                 this.brand.brandName = '';
                 this.brand.companyName = '';
                 this.brand.ordered = '';
                 this.brand.description = '';
                 this.brand.status = '';
+            },
+
+            // 打开新建brand的dialog
+            addDialog() {
+                this.emptyBrand();
                 this.dialogVisible = true;
                 this.behavior = 'add';
             },
@@ -227,31 +260,14 @@
                 // 获取当前行的id
                 var _this = this;
                 _this.behavior = "update";
-                console.log(this.behavior);
                 axios({
                     method: "post",
                     url: "http://localhost/brand_case/brand/selectById",
                     data: row.id
-                }).then(function (resp) {
+                }).then(resp => {
                     // 激活对话框窗口
                     _this.brand = resp.data;
                     _this.dialogVisible = true;
-                    console.log(_this.brand.status);
-                })
-            },
-
-            // 分页查询
-            selectByPage() {
-                // _this保存了vue对象，防止作用域失效
-                var _this = this;
-                axios({
-                    method: "get",
-                    url:
-                        "http://localhost/brand_case/brand/selectByPage?currentPage="+_this.currentPage+"&pageSize="+_this.pageSize
-                }).then(function (resp) {
-                    // 从后端显示每页显示的数据和总共数据条数
-                    _this.tableData = resp.data.rows;
-                    _this.totalSize = resp.data.totalSize;
                 })
             },
 
@@ -268,52 +284,37 @@
                 // 将选中的数据保存到模型
                 this.multipleSelection = val;
             },
-            // 查询方法
+
+            // 分页条件查询查询方法
             onSubmit() {
-                console.log(this.brand);
-            },
-            // 添加表格中一行数据
-            addBrand() {
-                var _this = this;
-                // 1.将对话框中输入的数据提交到后端
-                axios({
-                    method: "post",
-                    url: "http://localhost/brand_case/brand/add",
-                    data: _this.brand
-                }).then(function (resp) {
-                    if (resp.data = "success") {
-                        // 添加成功
-                        // 1.关闭当前对话框
-                        _this.dialogVisible = false;
-                        // 2.刷新selectByPage页面
-                        _this.selectByPage();
-                        // 3.显示一个提交成功信息
-                        _this.$message({
-                            message: '恭喜你，添加成功!',
-                            type: 'success'
-                        })
-                    }
-                })
+                this.selectAll();
             },
 
-            // 修改表格数据--根据updateDialog中获得的brand的参数进行修改并提交
-            updateBrand() {
+            // 修改或者新增表格数据
+            submitBrand() {
                 var _this = this;
+                if (this.behavior === "update") {
+                    var submitURL = "http://localhost/brand_case/brand/update";
+                    var respMessage = "恭喜你，修改成功!";
+                } else if (this.behavior === "add") {
+                    var submitURL = "http://localhost/brand_case/brand/add";
+                    var respMessage = "恭喜你，添加成功！";
+                }
                 // 1.将对话框中输入的数据提交到后端
                 axios({
                     method: "post",
-                    url: "http://localhost/brand_case/brand/update",
-                    data: _this.brand
-                }).then(function (resp) {
-                    if (resp.data = "success") {
+                    url: submitURL,
+                    data: this.brand
+                }).then(resp => {
+                    if (resp.data === "success") {
                         // 修改成功
                         // 1.关闭当前对话框
                         _this.dialogVisible = false;
-                        // 2.刷新selectByPage页面
-                        _this.selectByPage();
+                        // 2.刷新selectAll页面
+                        _this.selectAll();
                         // 3.显示一个提交成功信息
                         _this.$message({
-                            message: '恭喜你，修改成功!',
+                            message: respMessage,
                             type: 'success'
                         })
                     }
@@ -337,11 +338,11 @@
                         method: "post",
                         url: "http://localhost/brand_case/brand/deleteById",
                         data: id
-                    }).then(function (resp) {
-                        if (resp.data = "success") {
+                    }).then(resp => {
+                        if (resp.data === "success") {
                             // 删除成功
-                            // 1.刷新selectByPage页面
-                            _this.selectByPage();
+                            // 1.刷新selectAll页面
+                            _this.selectAll();
                             // 2.显示一个删除成功信息
                             _this.$message({
                                 message: '恭喜你，删除成功!',
@@ -364,7 +365,7 @@
                     let selectionElement = _this.multipleSelection[i];
                     this.selectedIds[i] = selectionElement.id;
                 }
-                if (this.selectedIds.length == 0) {
+                if (this.selectedIds.length === 0) {
                     this.$message({
                         message: '请选择要删除的数据！',
                         type: 'warning'
@@ -383,11 +384,11 @@
                             method: "post",
                             url: "http://localhost/brand_case/brand/deleteByIds",
                             data: _this.selectedIds
-                        }).then(function (resp) {
-                            if (resp.data = "success") {
+                        }).then(resp => {
+                            if (resp.data === "success") {
                                 // 删除成功
-                                // 1.刷新selectByPage页面
-                                _this.selectByPage();
+                                // 1.刷新selectAll页面
+                                _this.selectAll();
                                 // 2.显示一个删除成功信息
                                 _this.$message({
                                     message: '恭喜你，删除成功!',
@@ -407,13 +408,13 @@
             handleSizeChange(val) {
                 // 重新设置每页显示的条数
                 this.pageSize = val;
-                this.selectByPage();
+                this.selectAll();
             }
             ,
             handleCurrentChange(val) {
                 // 重新设置当前页码
                 this.currentPage = val;
-                this.selectByPage();
+                this.selectAll();
             }
 
         },
@@ -434,8 +435,18 @@
                 // 表格中多选的id数组
                 selectedIds: [],
 
-                // 品牌模型数据
+                // 用来修改和添加品牌模型数据
                 brand: {
+                    status: '',
+                    brandName: '',
+                    companyName: '',
+                    id: "",
+                    ordered: "",
+                    description: ""
+                },
+
+                // 用来查询的品牌模型数据
+                selectBrand: {
                     status: '',
                     brandName: '',
                     companyName: '',

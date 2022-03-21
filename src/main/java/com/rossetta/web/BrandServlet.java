@@ -26,12 +26,14 @@ public class BrandServlet extends BaseServlet {
 
     /**
      * 查询所有
+     *
      * @param request
      * @param response
      * @throws ServletException
      * @throws IOException
      */
-    public void selectAll(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    public void selectAll(HttpServletRequest request, HttpServletResponse response) throws ServletException,
+            IOException {
 
         // 查询所有，获得一个brand的列表
         List<Brand> brands = brandService.selectAll();
@@ -46,6 +48,7 @@ public class BrandServlet extends BaseServlet {
 
     /**
      * 添加数据
+     *
      * @param request
      * @param response
      * @throws ServletException
@@ -67,6 +70,7 @@ public class BrandServlet extends BaseServlet {
 
     /**
      * 修改数据
+     *
      * @param request
      * @param response
      * @throws ServletException
@@ -84,12 +88,14 @@ public class BrandServlet extends BaseServlet {
 
     /**
      * 通过id查询数据
+     *
      * @param request
      * @param response
      * @throws ServletException
      * @throws IOException
      */
-    public void selectById(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    public void selectById(HttpServletRequest request, HttpServletResponse response) throws ServletException,
+            IOException {
         // 1.从前端中获取id数据
         BufferedReader reader = request.getReader();
         String s = reader.readLine();
@@ -105,12 +111,14 @@ public class BrandServlet extends BaseServlet {
 
     /**
      * 删除一行数据
+     *
      * @param request
      * @param response
      * @throws ServletException
      * @throws IOException
      */
-    public void deleteById(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    public void deleteById(HttpServletRequest request, HttpServletResponse response) throws ServletException,
+            IOException {
         // 1.从前端中获取id
         BufferedReader reader = request.getReader();
         String s = reader.readLine();
@@ -126,12 +134,14 @@ public class BrandServlet extends BaseServlet {
 
     /**
      * 批量删除
+     *
      * @param request
      * @param response
      * @throws ServletException
      * @throws IOException
      */
-    public void deleteByIds(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    public void deleteByIds(HttpServletRequest request, HttpServletResponse response) throws ServletException,
+            IOException {
         // 从前端中获取待删除的数据的id数组
         BufferedReader reader = request.getReader();
         String jsonString = reader.readLine();
@@ -142,12 +152,20 @@ public class BrandServlet extends BaseServlet {
         response.getWriter().write("success");
     }
 
-    public void updateStatus(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    /**
+     * 更新数据的状态参数
+     * @param request
+     * @param response
+     * @throws ServletException
+     * @throws IOException
+     */
+    public void updateStatus(HttpServletRequest request, HttpServletResponse response) throws ServletException,
+            IOException {
         // 处理前端得到的json字符串
         BufferedReader reader = request.getReader();
-        String s = reader.readLine();
+        String params = reader.readLine();
 
-        JSONObject jsonObject = (JSONObject) JSON.parse(s);
+        JSONObject jsonObject = (JSONObject) JSON.parse(params);
         int id = (int) jsonObject.get("id");
         int status = (int) jsonObject.get("status");
 
@@ -160,12 +178,14 @@ public class BrandServlet extends BaseServlet {
 
     /**
      * 分页查询
+     *
      * @param request
      * @param response
      * @throws ServletException
      * @throws IOException
      */
-    public void selectByPage(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    public void selectByPage(HttpServletRequest request, HttpServletResponse response) throws ServletException,
+            IOException {
         // 获取参数
         String _currentPage = request.getParameter("currentPage");
         String _pageSize = request.getParameter("pageSize");
@@ -180,5 +200,32 @@ public class BrandServlet extends BaseServlet {
         response.setContentType("text/json;charset=utf-8");
         response.getWriter().write(jsonString);
 
+    }
+
+    public void selectByPageAndCondition(HttpServletRequest request,
+                                         HttpServletResponse response) throws ServletException,
+            IOException {
+        // 1. 参数获取
+        // 1.1 采用两种方式获取参数，get方式请求头获取currentPage和pageSize
+        String _currentPage = request.getParameter("currentPage");
+        String _pageSize = request.getParameter("pageSize");
+        int currentPage = Integer.parseInt(_currentPage);
+        int pageSize = Integer.parseInt(_pageSize);
+
+        // 1.2 通过getReader获取请求体中的data条件查询的参数，封装成brand
+        BufferedReader reader = request.getReader();
+        String params = reader.readLine();
+        Brand brand = JSON.parseObject(params, Brand.class);
+
+        // 2. 进行查询获取数据
+        PageBean<Brand> pageBean = brandService.selectByPageAndCondition(currentPage, pageSize,
+                brand);
+
+        // 3. 将brands对象封装成json字符串
+        String jsonString = JSON.toJSONString(pageBean);
+
+        // 4. 将json字符串转发到前端页面
+        response.setContentType("text/json;charset=utf-8");
+        response.getWriter().write(jsonString);
     }
 }

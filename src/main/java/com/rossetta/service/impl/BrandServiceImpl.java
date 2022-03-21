@@ -148,4 +148,44 @@ public class BrandServiceImpl implements BrandService {
 
         return pageBean;
     }
+
+    /**
+     * 分页条件查询
+     * @param currentPage 当前页数
+     * @param pageSize 每页显示条数
+     * @param brand 传入的条件查询参数
+     * @return
+     */
+    @Override
+    public PageBean<Brand> selectByPageAndCondition(int currentPage, int pageSize, Brand brand) {
+
+        SqlSession sqlSession = sqlSessionFactory.openSession();
+        BrandMapper mapper = sqlSession.getMapper(BrandMapper.class);
+
+        int begin = (currentPage - 1) * pageSize;
+        int size = pageSize;
+
+        // 模糊查询的预处理
+        String brandName = brand.getBrandName();
+        String companyName  = brand.getCompanyName();
+        if (brandName != null && brandName.length() != 0)
+            brand.setBrandName("%" + brandName + "%");
+        if (companyName != null && companyName.length() != 0)
+            brand.setCompanyName("%" + companyName + "%");
+
+        // 2.查询当前页显示的数据
+        List<Brand> rows = mapper.selectByPageAndCondition(begin, size, brand);
+        // 3.查询总数据条数
+        int totalSize = mapper.selectTotalSizeByCondition(brand);
+
+        // 封装到PageBean对象中
+        PageBean<Brand> pageBean = new PageBean<>();
+        pageBean.setRows(rows);
+        pageBean.setTotalSize(totalSize);
+
+        sqlSession.close();
+
+        return pageBean;
+    }
+
 }

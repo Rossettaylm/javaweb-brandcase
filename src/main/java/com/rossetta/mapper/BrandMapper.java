@@ -31,10 +31,20 @@ public interface BrandMapper {
     @Update("update tb_brand set status =  #{status} where id = #{id};")
     void updateStatus(@Param("id") int id, @Param("status") int status);
 
+    // 分页查询
     @Select("select * from tb_brand limit #{begin}, #{size};")
     @ResultMap("brandResultMap")
     List<Brand> selectByPage(@Param("begin") int begin, @Param("size") int size);
 
     @Select("select count(*) from tb_brand;")
     int selectTotalSize();
+
+    // 条件分页查询
+    List<Brand> selectByPageAndCondition(@Param("begin") int begin,
+                                         @Param("size") int size,
+                                         @Param("brand") Brand brand);
+
+    int selectTotalSizeByCondition(Brand brand);
+
 }
+
